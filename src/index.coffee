@@ -70,7 +70,9 @@ class Helper
   @Response = MockResponse
 
   constructor: (scriptsPath) ->
-    @scriptsPath = Path.resolve(Path.dirname(module.parent.filename), scriptsPath)
+    if typeof scriptsPath == 'string'
+      scriptsPath = [scriptsPath]
+    @scriptsPath = (Path.resolve(Path.dirname(module.parent.filename), path) for path in scriptsPath)
 
   createRoom: (options={}) ->
     robot = new MockRobot(options.httpd)
@@ -78,11 +80,12 @@ class Helper
     if 'response' of options
       robot.Response = options.response
 
-    if Fs.statSync(@scriptsPath).isDirectory()
-      for file in Fs.readdirSync(@scriptsPath).sort()
-        robot.loadFile @scriptsPath, file
-    else
-      robot.loadFile Path.dirname(@scriptsPath), Path.basename(@scriptsPath)
+    for path in @scriptsPath
+      if Fs.statSync(path).isDirectory()
+        for file in Fs.readdirSync(path).sort()
+          robot.loadFile path, file
+      else
+        robot.loadFile Path.dirname(path), Path.basename(path)
 
     robot.brain.emit 'loaded'
 
